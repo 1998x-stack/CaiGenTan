@@ -1,4 +1,4 @@
-import {ENTRIES,TOTAL,PARTS,COLLECTIONS,THEMATIC_LABELS,themesFor,byNumber} from "./data/index.js";
+import {ENTRIES,TOTAL,PARTS,COLLECTIONS,THEMATIC_LABELS,SENTENCE_CARD_COUNT,alignedSegments,themesFor,byNumber} from "./data/index.js";
 const $=id=>document.getElementById(id);
 const make=(tag,cls,text)=>{
  const el=document.createElement(tag);if(cls)el.className=cls;
@@ -81,24 +81,33 @@ function toggleReveal(button,meaning){
  button.querySelector(".reveal-label").textContent=opening?"收起此则译文":"轻触见义";
  button.querySelector(".reveal-seal").textContent=opening?"收":"译";
  meaning.hidden=!opening;
- button.closest(".proverb-card").classList.toggle("open",opening);
+ button.closest(".sentence-unit").classList.toggle("open",opening);
  countRevealed();
 }
 function renderProverbs(section){
  const frag=document.createDocumentFragment();
  for(const entry of ENTRIES.slice(section.start-1,section.end)){
-  const card=make("article","proverb-card");card.id="proverb-"+entry.number;card.setAttribute("role","listitem");
+  const card=make("article","proverb-card");
+  card.id="proverb-"+entry.number;card.setAttribute("role","listitem");
   const meta=make("div","proverb-meta");
   meta.append(make("span",null,entry.sourceLabel),make("span",null,"明刻本 · "+String(entry.number).padStart(3,"0")+" / 356"));
-  const source=make("p","original",displayText(entry));
-  const button=make("button","reveal-button");button.type="button";
-  button.setAttribute("aria-expanded","false");
-  button.setAttribute("aria-controls","meaning-"+entry.number);
-  button.setAttribute("aria-label","揭晓"+entry.sourceLabel+"现代白话");
-  button.append(make("span","reveal-label","轻触见义"),make("span","reveal-seal","译"));
-  const meaning=make("div","meaning");meaning.id="meaning-"+entry.number;meaning.hidden=true;
-  meaning.append(make("span","meaning-caption","白话释义 / MODERN CHINESE"),make("p",null,entry.translation));
-  button.addEventListener("click",()=>toggleReveal(button,meaning));
+  card.append(meta);
+  for(const segment of alignedSegments(entry)){
+   const unit=make("div","sentence-unit");
+   const heading=make("div","sentence-index",segment.count>1?"句 "+segment.index+" / "+segment.count:"原译对照");
+   const source=make("p","original",state.script==="traditional"?segment.traditional:segment.original);
+   const button=make("button","reveal-button");button.type="button";
+   const meaningId="meaning-"+entry.number+"-"+segment.index;
+   button.setAttribute("aria-expanded","false");
+   button.setAttribute("aria-controls",meaningId);
+   button.setAttribute("aria-label","揭晓"+entry.sourceLabel+"第"+segment.index+"段白话");
+   button.append(make("span","reveal-label","轻触见义"),make("span","reveal-seal","译"));
+   const meaning=make("div","meaning");meaning.id=meaningId;meaning.hidden=true;
+   meaning.append(make("span","meaning-caption","白话释义 / MODERN CHINESE"),make("p",null,segment.translation));
+   button.addEventListener("click",()=>toggleReveal(button,meaning));
+   unit.append(heading,source,button,meaning);
+   card.append(unit);
+  }
   const bottom=make("div","card-bottom");
   const tags=make("div","tags");for(const tag of themesFor(entry))tags.append(make("span",null,tag));
   const buttons=make("div","card-buttons");
@@ -121,8 +130,7 @@ function renderProverbs(section){
    catch{toast("请复制浏览器地址栏的地址")}
   });
   buttons.append(bookmark,share);bottom.append(tags,buttons);
-  card.append(meta,source,button,meaning,bottom);
-  frag.append(card);
+  card.append(bottom);frag.append(card);
  }
  $("reading-lines").replaceChildren(frag);countRevealed();
 }
