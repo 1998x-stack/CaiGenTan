@@ -4,11 +4,12 @@
 
 npm test应覆盖：
 - 356则唯一连续编号，前集222、后集134；
+- 698张阅读句卡，简体、繁体、白话按原条回拼都逐字不变；
 - 每则同时存在古文简体、繁体、对应现代译释及来源标签；
 - ID唯一、集内序号连续，原文和译文不得为空；
 - 24个分段覆盖356则、分段不跨前后集；
 - 关键DOM ID唯一且确实被JavaScript引用；
-- 每则原译默认为hidden、aria-expanded=false及唯一按钮关系；
+- 每句卡原译默认为hidden、aria-expanded=false及唯一按钮关系；
 - 动态内容只用textContent，不用innerHTML插入原典；
 - npm run build后dist包含所有ES模块与SVG。
 
