@@ -30,7 +30,11 @@ export const byPart=id=>ENTRIES.filter(e=>id==="former"?e.part==="前集":id==="
 export const sourceRef="https://zh.wikisource.org/wiki/菜根譚";
 /** 仅整则对应，不将无法保证语义对齐的白话按标点机械拆开。 */
 export const paired=entry=>({original:entry.original,translation:entry.translation});
-export const COLLECTIONS=Object.freeze(Array.from({length:24},(_,i)=>{
- const start=i*15+1,end=Math.min((i+1)*15,TOTAL);
- return {id:i+1,start,end,part:start<=222?"前集":"后集",title:(start<=222?"前集":"后集")+" · "+start+"—"+end+"则"};
+export const COLLECTIONS=Object.freeze(PARTS.flatMap(part=>{
+ const list=[];
+ for(let start=part.first;start<=part.last;start+=15){
+  const end=Math.min(start+14,part.last);
+  list.push({id:list.length+1+(part.id==="latter"?15:0),start,end,part:part.name,title:part.name+" · "+(start-part.first+1)+"—"+(end-part.first+1)+"则"});
+ }
+ return list;
 }));
