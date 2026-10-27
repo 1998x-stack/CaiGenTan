@@ -9,8 +9,9 @@
 - [x] 24阅读段、收藏、字号、随机一则和深链接
 - [x] Codex/OpenCode Skill入口、中文README、专业文档
 - [x] CI、静态构建和Pages部署工作流配置
-- [ ] 在GitHub Actions中独立确认CI成功
-- [ ] 确认公开Pages的真正可访问性
+- [x] GitHub Actions CI 成功：2026-10-27，run 40460423488
+- [x] GitHub Pages 部署工作流成功：2026-10-27，run 40460423481
+- [ ] 独立使用真实公开浏览器验收点击交互、响应式和屏幕阅读器
 
 ## Stage 1 · 体验质量
 
