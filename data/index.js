@@ -38,3 +38,22 @@ export const COLLECTIONS=Object.freeze(PARTS.flatMap(part=>{
  }
  return list;
 }));
+
+/** 仅当简体、繁体与白话均可无损回拼，且标点分句数严格一致时细分展示。
+ * 标点数一致只能说明结构性对齐，语义仍须人工审核。
+ */
+export function editorialSentences(text){
+ if(typeof text!=="string")throw new TypeError("Expected a string");
+ return text.match(/[^。！？；]+[。！？；][”’]?|[^。！？；]+$/gu)||[];
+}
+export function alignedSegments(entry){
+ const sources=editorialSentences(entry.original);
+ const traditional=editorialSentences(entry.traditional);
+ const interpretations=editorialSentences(entry.translation);
+ const safe=sources.length>1&&sources.length===traditional.length&&sources.length===interpretations.length&&
+   sources.join("")===entry.original&&traditional.join("")===entry.traditional&&interpretations.join("")===entry.translation;
+ if(!safe)return [{index:1,count:1,original:entry.original,traditional:entry.traditional,translation:entry.translation,method:"source-pair"}];
+ return sources.map((original,i)=>({index:i+1,count:sources.length,original,traditional:traditional[i],translation:interpretations[i],method:"punctuation"}));
+}
+export const SENTENCE_CARDS=Object.freeze(ENTRIES.map(alignedSegments));
+export const SENTENCE_CARD_COUNT=SENTENCE_CARDS.reduce((n,a)=>n+a.length,0);
