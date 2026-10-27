@@ -1,8 +1,9 @@
 import fs from "node:fs";
-import {ENTRIES,TOTAL,PARTS,COLLECTIONS,THEMATIC_LABELS,byNumber,byPart,paired,themesFor} from "../data/index.js";
+import {ENTRIES,TOTAL,PARTS,COLLECTIONS,THEMATIC_LABELS,byNumber,byPart,paired,themesFor,SENTENCE_CARD_COUNT,alignedSegments} from "../data/index.js";
 let pass=0,failed=0;
 function check(cond,label){if(cond)pass++;else{failed++;console.error("FAIL "+label)}}
 check(TOTAL===356,"356 proverbs");
+check(SENTENCE_CARD_COUNT===698,"698 conservative line pairs");
 check(ENTRIES.length===356,"full source length");
 check(PARTS.length===2,"two source collections");
 check(ENTRIES.filter(x=>x.part==="前集").length===222,"222 former");
@@ -32,6 +33,12 @@ for(let i=0;i<356;i++){
  check(byNumber(i+1)===e,"byNumber "+(i+1));
  check(paired(e).original===e.original&&paired(e).translation===e.translation,"paired unmodified "+(i+1));
  check(Array.isArray(themesFor(e)),"modern thematic tags "+(i+1));
+ const lines=alignedSegments(e);
+ check(lines.length>=1,"rendered lines "+(i+1));
+ check(lines.map(line=>line.original).join("")===e.original,"original lines fully preserve source "+(i+1));
+ check(lines.map(line=>line.traditional).join("")===e.traditional,"traditional lines fully preserve source "+(i+1));
+ check(lines.map(line=>line.translation).join("")===e.translation,"translation lines fully preserve source "+(i+1));
+ check(lines.every((line,j)=>line.index===j+1&&line.count===lines.length),"line index continuity "+(i+1));
 }
 const files=["README.md","SKILL.md","AGENTS.md","ATTRIBUTION.md","LICENSE","index.html","styles.css","app.js",".agents/skills/caigen-tan-wisdom/SKILL.md","prompts/codex-opencode.md","docs/README.md","docs/TEXTUAL-SOURCES.md","docs/READING-INTERACTION.md",".github/workflows/ci.yml",".github/workflows/pages.yml","assets/favicon.svg","assets/og-cover.svg","scripts/build.mjs","data/index.js","data/source/entries-001-060.js","data/source/entries-301-356.js"];
 for(const path of files)check(fs.existsSync(path),"required "+path);
@@ -42,6 +49,8 @@ for(const id of ["progress","search","library-grid","show-more","reading-lines",
  check(ids.includes(id),"HTML element "+id);check(app.includes('"'+id+'"'),"JavaScript element "+id);
 }
 check(app.includes("meaning.hidden=true"),"translations initially truly hidden");
+check(app.includes("alignedSegments(entry)"),"display uses conservative sentence mapping");
+check(app.includes('button.closest(".sentence-unit")'),"each segment independently revealable");
 check(app.includes('aria-expanded'),"accessible reveal button");
 check(app.includes('aria-controls'),"unique translation controls");
 check(app.includes("renderProverbs(section)"),"chapter navigation restores initial state");
