@@ -147,12 +147,11 @@ function renderGroup(){
  $("next-label").textContent=state.section<COLLECTIONS.length-1?COLLECTIONS[state.section+1].title:"已至卷末";
  document.documentElement.style.setProperty("--reading-size",state.font+"px");
  renderProverbs(section);renderSections();
- storage.set("last",section.start);
 }
 const motion=()=>matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth";
 function navigateToSection(index,scroll){
  if(index<0||index>=COLLECTIONS.length)return;
- state.section=index;renderGroup();
+ state.section=index;renderGroup();storage.set("last",COLLECTIONS[index].start);
  history.replaceState(null,"","#entry-"+COLLECTIONS[index].start);
  if(scroll)$("reader").scrollIntoView({behavior:motion(),block:"start"});
  else $("group-kicker").scrollIntoView({behavior:motion(),block:"start"});
