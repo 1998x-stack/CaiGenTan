@@ -1,0 +1,53 @@
+import fs from "node:fs";
+import {ENTRIES,TOTAL,PARTS,COLLECTIONS,THEMATIC_LABELS,byNumber,byPart,paired,themesFor} from "../data/index.js";
+let pass=0,failed=0;
+function check(cond,label){if(cond)pass++;else{failed++;console.error("FAIL "+label)}}
+check(TOTAL===356,"356 proverbs");
+check(ENTRIES.length===356,"full source length");
+check(PARTS.length===2,"two source collections");
+check(ENTRIES.filter(x=>x.part==="前集").length===222,"222 former");
+check(ENTRIES.filter(x=>x.part==="后集").length===134,"134 latter");
+check(byPart("former").length===222&&byPart("latter").length===134,"source partitions");
+check(ENTRIES[0].original.startsWith("栖守道德者"),"source first entry");
+check(ENTRIES[12].original.includes("径路窄处，留一步与人行"),"13th genuine quotation");
+check(ENTRIES[222].part==="后集"&&ENTRIES[222].numberInPart===1,"latter starts at 223");
+check(ENTRIES[355].numberInPart===134,"last entry");
+check(new Set(ENTRIES.map(e=>e.id)).size===356,"all source IDs unique");
+check(COLLECTIONS.length===24,"24 reading groups");
+check(COLLECTIONS[0].start===1&&COLLECTIONS.at(-1).end===356,"reading groups complete");
+check(COLLECTIONS.flatMap(c=>Array.from({length:c.end-c.start+1},(_,j)=>c.start+j)).every((n,i)=>n===i+1),"groups cover items once in order");
+check(COLLECTIONS.every(c=>ENTRIES.slice(c.start-1,c.end).every(e=>e.part===c.part)),"groups do not cross collection boundaries");
+check(THEMATIC_LABELS.length===6,"six modern navigation labels");
+for(let i=0;i<356;i++){
+ const e=ENTRIES[i];
+ check(e.number===i+1,"global number "+(i+1));
+ check(e.part===(i<222?"前集":"后集"),"part "+(i+1));
+ check(e.numberInPart===(i<222?i+1:i-221),"local number "+(i+1));
+ check(typeof e.original==="string"&&e.original.trim().length>8,"simplified original "+(i+1));
+ check(typeof e.traditional==="string"&&e.traditional.trim().length>8,"traditional original "+(i+1));
+ check(typeof e.translation==="string"&&e.translation.trim().length>8,"modern interpretation "+(i+1));
+ check(e.sourceLabel===e.part+"·第"+e.numberInPart+"则","source label "+(i+1));
+ check(/^caigen\.[12]\.\d+$/.test(e.id),"source id "+(i+1));
+ check(/^[0-9a-f]{64}$/.test(e.sourceHash),"upstream source hash "+(i+1));
+ check(byNumber(i+1)===e,"byNumber "+(i+1));
+ check(paired(e).original===e.original&&paired(e).translation===e.translation,"paired unmodified "+(i+1));
+ check(Array.isArray(themesFor(e)),"modern thematic tags "+(i+1));
+}
+const files=["README.md","SKILL.md","AGENTS.md","ATTRIBUTION.md","LICENSE","index.html","styles.css","app.js",".agents/skills/caigen-tan-wisdom/SKILL.md","prompts/codex-opencode.md","docs/README.md","docs/TEXTUAL-SOURCES.md","docs/READING-INTERACTION.md",".github/workflows/ci.yml",".github/workflows/pages.yml","assets/favicon.svg","assets/og-cover.svg","scripts/build.mjs","data/index.js","data/source/entries-001-060.js","data/source/entries-301-356.js"];
+for(const path of files)check(fs.existsSync(path),"required "+path);
+const html=fs.readFileSync("index.html","utf8"),app=fs.readFileSync("app.js","utf8"),css=fs.readFileSync("styles.css","utf8");
+const ids=[...html.matchAll(/id="([^"]+)"/g)].map(m=>m[1]);
+check(ids.length===new Set(ids).size,"unique HTML identifiers");
+for(const id of ["progress","search","library-grid","show-more","reading-lines","sections","reveal-count","collapse-all","font-plus","font-minus","script-toggle","theme-toggle","prev","next","random"]){
+ check(ids.includes(id),"HTML element "+id);check(app.includes('"'+id+'"'),"JavaScript element "+id);
+}
+check(app.includes("meaning.hidden=true"),"translations initially truly hidden");
+check(app.includes('aria-expanded'),"accessible reveal button");
+check(app.includes('aria-controls'),"unique translation controls");
+check(app.includes("renderProverbs(section)"),"chapter navigation restores initial state");
+check(app.includes("textContent"),"safe DOM text rendering");
+check(!app.includes("innerHTML"),"no raw HTML injection");
+check(css.includes(".proverb-card")&&css.includes(".meaning"),"stacked original and interpretation styles");
+check(html.includes('./app.js'),"relative static entry point");
+console.log("PASS "+pass+"/"+(pass+failed)+" corpus and UI assertions; "+TOTAL+" entries in "+COLLECTIONS.length+" reading sections.");
+if(failed)process.exitCode=1;
